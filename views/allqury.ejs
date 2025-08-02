@@ -36,7 +36,22 @@
              <a href="/addqury" class="btn btn-primary">Ask a Question</a>
         </div>
         
-        <div class="controls mb-4 d-flex justify-content-end">
+        <!-- Filter Controls -->
+        <div class="controls mb-4 d-flex justify-content-end align-items-center gap-3">
+            <select id="sortBySelect" class="form-select w-auto" aria-label="Sort by">
+                <option value="" <%= locals.sortBy === '' ? 'selected' : '' %>>Sort by...</option>
+                <option value="upvotes" <%= locals.sortBy === 'upvotes' ? 'selected' : '' %>>Upvotes</option>
+            </select>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="showOpenOnly" <%= locals.showOpenOnly ? 'checked' : '' %>>
+                <label class="form-check-label" for="showOpenOnly">Show Open Only</label>
+            </div>
+            <select id="statusFilter" class="form-select w-auto" aria-label="Filter by status">
+                <option value="">All Statuses</option>
+                <option value="Open" <%= locals.selectedStatus === 'Open' ? 'selected' : '' %>>Open</option>
+                <option value="Resolved" <%= locals.selectedStatus === 'Resolved' ? 'selected' : '' %>>Resolved</option>
+                <option value="Closed" <%= locals.selectedStatus === 'Closed' ? 'selected' : '' %>>Closed</option>
+            </select>
             <select id="categoryFilter" class="form-select w-auto" aria-label="Filter by category">
                 <option value="">All Categories</option>
                 <% if(locals.categories) { categories.forEach(cat => { %>
@@ -53,10 +68,11 @@
                             Posted by: <a href="/user/<%= query.user %>" class="text-decoration-none"><strong><%= query.user %></strong></a>
                         </div>
                         <div>
-                            <!-- Status Badge Logic -->
-                            <% let statusClass = 'bg-secondary'; %>
-                            <% if (query.status === 'Open') statusClass = 'bg-primary'; %>
-                            <% if (query.status === 'Resolved') statusClass = 'bg-success'; %>
+                            <% 
+                                let statusClass = 'bg-secondary';
+                                if (query.status === 'Resolved') { statusClass = 'bg-success'; } 
+                                else if (query.status === 'Open') { statusClass = 'bg-primary'; }
+                            %>
                             <span class="badge <%= statusClass %>"><%= query.status %></span>
                             <span class="badge bg-info text-dark"><%= query.category %></span>
                         </div>
@@ -81,7 +97,6 @@
                                 <span class="vote-count"><%= query.downvotes %></span>
                             </div>
                         </div>
-                        <!-- Close Button Form -->
                         <% if (currentUser && query.status !== 'Closed' && (currentUser.username === query.user || currentUser.role === 'Admin')) { %>
                             <form action="/allqury/<%= query._id %>/close" method="POST" class="d-inline">
                                 <button type="submit" class="btn btn-sm btn-danger">Close Query</button>
@@ -91,17 +106,62 @@
                 </div>
             <% } %>
         <% } else { %>
-            <div class="alert alert-info text-center">No queries found.</div>
+            <div class="alert alert-info text-center">No queries found for the selected filters.</div>
         <% } %>
     </div>
 
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.getElementById('categoryFilter').addEventListener('change', function() {
-            const category = this.value;
-            window.location.href = category ? `/allqury?category=${encodeURIComponent(category)}` : '/allqury';
-        });
+        const categoryFilter = document.getElementById('categoryFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        const showOpenOnlyCheckbox = document.getElementById('showOpenOnly');
+        const sortBySelect = document.getElementById('sortBySelect');
+
+        function applyFilters() {
+            const params = new URLSearchParams();
+            const category = categoryFilter.value;
+            const status = statusFilter.value;
+            const sortBy = sortBySelect.value;
+
+            // Handle checkbox and status dropdown
+            if (showOpenOnlyCheckbox.checked) {
+                params.set('openOnly', 'true');
+            } else {
+                params.set('openOnly', 'false');
+                if (status) {
+                    params.set('status', status);
+                }
+            }
+
+            // Handle category
+            if (category) {
+                params.set('category', category);
+            }
+            
+            // Handle sorting
+            if (sortBy) {
+                params.set('sortBy', sortBy);
+            }
+            
+            window.location.href = `/allqury?${params.toString()}`;
+        }
+
+        function toggleStatusFilter() {
+            statusFilter.disabled = showOpenOnlyCheckbox.checked;
+            if (showOpenOnlyCheckbox.checked) {
+                statusFilter.value = '';
+            }
+        }
+        
+        // Add event listeners
+        categoryFilter.addEventListener('change', applyFilters);
+        statusFilter.addEventListener('change', applyFilters);
+        showOpenOnlyCheckbox.addEventListener('change', applyFilters);
+        sortBySelect.addEventListener('change', applyFilters);
+
+        // Set initial state on page load
+        document.addEventListener('DOMContentLoaded', toggleStatusFilter);
     </script>
 </body>
 </html>
