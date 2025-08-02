@@ -11,7 +11,19 @@ const quarySchema = new mongoose.Schema({
   downvotes: {
     type: Number,
     default: 0
-  }
+  },
+  status: {
+        type: String,
+        enum: ['Open', 'Resolved', 'Closed'],
+        default: 'Open'
+    },
+  replies: [
+        {
+            text: { type: String, required: true },
+            author: { type: String, required: true }, // Stores the username of the agent
+            createdAt: { type: Date, default: Date.now }
+        }
+    ]
 });
 
 const quary = new mongoose.model("Quary", quarySchema);
