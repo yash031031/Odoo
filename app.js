@@ -75,16 +75,14 @@ app.get("/allqury", async (req, res) => {
         const filter = {};
         let sortOption = {};
 
-        const isShowOpenOnly = openOnly === 'true' || (openOnly === undefined && status === undefined && !sortBy);
-
-        if (category) {
-            filter.category = category;
-        }
-
-        if (isShowOpenOnly) {
+        if (openOnly === 'true') {
             filter.status = 'Open';
         } else if (status) {
             filter.status = status;
+        }
+
+        if (category) {
+            filter.category = category;
         }
 
         if (sortBy === 'upvotes') {
@@ -94,12 +92,14 @@ app.get("/allqury", async (req, res) => {
         const queries = await QuaryModel.find(filter).sort(sortOption);
         const categories = await QuaryModel.distinct("category");
         
+        const showOpenOnly = openOnly === 'true' || openOnly === undefined;
+
         res.render("allqury", {
             queries,
             categories,
             selectedCategory: category || "",
-            selectedStatus: isShowOpenOnly ? '' : status || "",
-            showOpenOnly: isShowOpenOnly,
+            selectedStatus: showOpenOnly ? '' : status || "",
+            showOpenOnly: showOpenOnly,
             sortBy: sortBy || ""
         });
     } catch (err) {
@@ -113,9 +113,28 @@ app.get("/user/:username", async (req, res) => {
         const { username } = req.params;
         const profileUser = await User.findOne({ username: username });
         if (!profileUser) { return res.status(404).send("User not found."); }
+        
         const userQueries = await QuaryModel.find({ user: profileUser.username });
-        res.render("userProfile", { profileUser, queries: userQueries });
+
+        // --- CHART DATA AGGREGATION ---
+        const categoryCounts = {};
+        userQueries.forEach(query => {
+            categoryCounts[query.category] = (categoryCounts[query.category] || 0) + 1;
+        });
+
+        const chartData = {
+            labels: Object.keys(categoryCounts),
+            data: Object.values(categoryCounts)
+        };
+        // --- END CHART DATA AGGREGATION ---
+
+        res.render("userProfile", { 
+            profileUser, 
+            queries: userQueries,
+            chartData // Pass the new chart data to the template
+        });
     } catch (err) {
+        console.error("Error fetching user profile:", err);
         res.status(500).send("Internal Server Error");
     }
 });
@@ -165,15 +184,18 @@ app.post("/allqury/:id/downvote", isLoggedIn, async (req, res) => {
     }
 });
 
-app.post("/allqury/:id/reply", isLoggedIn, isSupportAgent, async (req, res) => {
+app.post("/allqury/:id/reply", isLoggedIn, async (req, res) => {
     try {
         const query = await QuaryModel.findById(req.params.id);
+        if (req.user.username !== query.user && req.user.role !== 'Support Agent') {
+            return res.redirect(`/allqury/${query._id}`);
+        }
         const newReply = {
             text: req.body.replyText,
             author: req.user.username
         };
         query.replies.push(newReply);
-        if (query.status === 'Open') {
+        if (req.user.role === 'Support Agent' && query.status === 'Open') {
             query.status = 'Resolved';
         }
         await query.save();

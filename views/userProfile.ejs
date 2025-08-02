@@ -16,7 +16,7 @@
     </style>
 </head>
 <body>
-    <!-- Navbar (same as allqury.ejs for consistency) -->
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="/allqury">QueryApp</a>
@@ -37,6 +37,20 @@
             <h1><%= profileUser.username %></h1>
             <p class="lead">Email: <%= profileUser.email %></p>
             <p class="lead">Role: <span class="badge bg-info"><%= profileUser.role %></span></p>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                User Activity
+            </div>
+            <div class="card-body">
+                <% if (chartData && chartData.labels.length > 0) { %>
+                    <canvas id="userActivityChart"></canvas>
+                <% } else { %>
+                    <p class="text-center text-muted">No activity data to display.</p>
+                <% } %>
+            </div>
         </div>
 
         <h2 class="mb-3">Queries by <%= profileUser.username %></h2>
@@ -60,5 +74,51 @@
             <p><%= profileUser.username %> has not posted any queries yet.</p>
         <% } %>
     </div>
+
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Only run the chart script if the chartData exists and has labels
+        <% if (chartData && chartData.labels.length > 0) { %>
+            const ctx = document.getElementById('userActivityChart').getContext('2d');
+            const userActivityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: <%- JSON.stringify(chartData.labels) %>,
+                    datasets: [{
+                        label: '# of Queries by Category',
+                        data: <%- JSON.stringify(chartData.data) %>,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.2)',
+                            'rgba(54, 162, 235, 0.2)',
+                            'rgba(255, 206, 86, 0.2)',
+                            'rgba(75, 192, 192, 0.2)',
+                            'rgba(153, 102, 255, 0.2)',
+                            'rgba(255, 159, 64, 0.2)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        <% } %>
+    </script>
 </body>
 </html>
