@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Queries</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #555;
+            text-align: center;
+        }
+        .query-card {
+            background-color: #e9e9e9;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .query-card h3 {
+            margin-top: 0;
+        }
+        .query-card p {
+            margin-bottom: 0;
+        }
+        .query-card .category {
+            font-weight: bold;
+            color: #007BFF;
+        }
+        .query-card .user {
+            font-style: italic;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <a href="http://localhost:8080/addqury"><button>ask</button></a>
+    <div class="container">
+        <h1>All Queries</h1>
+        <% if (queries && queries.length > 0) { %>
+    <% for (let query of queries) { %>
+        <a href="http://localhost:8080/allqury/<%=query._id%>">
+            <div class="query-card">
+            <p class="user">User: <%= query.user %></p>
+            <p class="category">Category: <%= query.category %></p>
+            <h3><%= query.msg %></h3>
+        </div>
+        </a>
+    <% } %>
+<% } else { %>
+    <p>No queries found.</p>
+<% } %>
+    </div>
+</body>
+</html>
